@@ -139,12 +139,14 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
    * To work with circular dependency, wrap each imported promise with try-catch.
    * Promises from circular dependencies will not be imported and awaited.
    *
+   * ```js
    * export let __tla = Promise.all([
    *   (() => { try { return __tla_0; } catch {} })(),
    *   (() => { try { return __tla_1; } catch {} })()
    * ]).then(async () => {
    *   // original top-level statements here
    * });
+   * ```
    */
 
   // Add import of TLA promises from imported modules
