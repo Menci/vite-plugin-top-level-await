@@ -258,4 +258,34 @@ describe("Transform top-level await", () => {
     `
     );
   });
+
+  it("should transform dynamic imports correctly", () => {
+    test(
+      "a",
+      {
+        a: { imported: [], importedBy: [], transformNeeded: true },
+        b: { imported: [], importedBy: [], transformNeeded: false },
+        c: { imported: [], importedBy: [], transformNeeded: true }
+      },
+      `
+      const x = await Promise.all([
+        import("b"),
+        import("c"),
+        import(globalThis.dynamicModuleName)
+      ]);
+      export { x as y };
+    `,
+      `
+      let x;
+      let __tla = (async () => {
+        x = await Promise.all([
+          import("b"),
+          import("c").then(async m => { await m.__tla; return m; }),
+          import(globalThis.dynamicModuleName).then(async m => { await m.__tla; return m; })
+        ]);
+      })();
+      export { x as y, __tla };
+    `
+    );
+  });
 });

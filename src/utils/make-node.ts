@@ -121,11 +121,20 @@ export function makeTryCatchStatement(
   };
 }
 
-export function makeArrowFunction(statements: SWC.Statement[], async?: boolean): SWC.ArrowFunctionExpression {
+export function makeArrowFunction(
+  args: string[],
+  statements: SWC.Statement[],
+  async?: boolean
+): SWC.ArrowFunctionExpression {
   return {
     type: "ArrowFunctionExpression",
     span: span(),
-    params: [],
+    params: args.map<SWC.Identifier>(arg => ({
+      type: "Identifier",
+      span: span(),
+      value: arg,
+      optional: false
+    })),
     body: {
       type: "BlockStatement",
       span: span(),
@@ -194,5 +203,13 @@ export function makeExportListDeclaration(map: [exportName: string, identifier: 
     // @ts-ignore
     typeOnly: false,
     assets: null
+  };
+}
+
+export function makeAwaitExpression(expression: SWC.Expression): SWC.AwaitExpression {
+  return {
+    type: "AwaitExpression",
+    span: span(),
+    argument: expression
   };
 }

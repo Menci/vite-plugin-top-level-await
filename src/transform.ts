@@ -16,10 +16,22 @@ import {
   makeMemberExpression,
   makeVariableInitDeclaration,
   makeExportListDeclaration,
-  makeStatement
+  makeStatement,
+  makeAwaitExpression
 } from "./utils/make-node";
 import { resolveImport } from "./utils/resolve-import";
 import { resolvePattern } from "./utils/resolve-pattern";
+
+function transformByType(node: object, type: string, filter: (node: SWC.Node) => SWC.Node) {
+  for (const key of Array.isArray(node) ? node.keys() : Object.keys(node)) {
+    if (["span", "type"].includes(key as string)) continue;
+    if (!node[key]) continue;
+    if (typeof node[key] === "object") node[key] = transformByType(node[key], type, filter);
+  }
+
+  if (node["type"] === type) return filter(node as SWC.Node);
+  return node;
+}
 
 export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo: BundleInfo, options: Options) {
   // Extract import declarations
@@ -129,6 +141,57 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
   });
 
   /*
+   * Process dynamic imports.
+   *
+   * ```js
+   * [
+   *   import("some-module-with-tla"),
+   *   import("some-module-without-tla"),
+   *   import(dynamicModuleName)
+   * ]
+   * ```
+   *
+   * The expression evaluates to a promise, which will resolve after module loaded, but not after
+   * out `__tla` promise resolved.
+   *
+   * We can check the target module. If the argument is string literial and the target module has NO
+   * top-level await, we won't need to transform it.
+   *
+   * ```js
+   * [
+   *   import("some-module-with-tla").then(async m => { await m.__tla; return m; }),
+   *   import("some-module-without-tla"),
+   *   import(dynamicModuleName).then(async m => { await m.__tla; return m; })
+   * ]
+   * ```
+   */
+
+  transformByType(warppedStatements, "CallExpression", (call: SWC.CallExpression) => {
+    if (call.callee.type === "Import") {
+      const argument = call.arguments[0].expression;
+      if (argument.type === "StringLiteral") {
+        const importedModuleName = resolveImport(moduleName, argument.value);
+
+        // Skip transform
+        if (importedModuleName && !bundleInfo[importedModuleName].transformNeeded) return call;
+      }
+
+      return makeCallExpression(makeMemberExpression(call, "then"), [
+        makeArrowFunction(
+          ["m"],
+          [
+            makeStatement(makeAwaitExpression(makeMemberExpression("m", "__tla"))),
+            makeReturnStatement(makeIdentifier("m"))
+          ],
+          true
+        )
+      ]);
+    }
+
+    return call;
+  });
+
+  /*
    * Import and await the promise "__tla" from each imported module with TLA transform enabled.
    *
    * ```js
@@ -169,15 +232,16 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
       : makeArrayExpression(
           [...Array(importedPromiseCount).keys()].map(i =>
             makeCallExpression(
-              makeArrowFunction([
-                makeTryCatchStatement([makeReturnStatement(makeIdentifier(options.promiseImportName(i)))], [])
-              ])
+              makeArrowFunction(
+                [],
+                [makeTryCatchStatement([makeReturnStatement(makeIdentifier(options.promiseImportName(i)))], [])]
+              )
             )
           )
         );
 
   // The `async () => { /* original top-level statements */ }` function
-  const wrappedTopLevelFunction = makeArrowFunction(warppedStatements, true);
+  const wrappedTopLevelFunction = makeArrowFunction([], warppedStatements, true);
 
   // `Promise.all([ /* ... */]).then(async () => { /* ... */ })` or `(async () => {})()`
   const promiseExpression = importedPromiseArray
