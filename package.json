@@ -3,6 +3,10 @@
   "version": "0.0.4",
   "description": "Transform code to support top-level await in normal browsers for Vite.",
   "main": "dist/index.js",
+  "exports": {
+    "import": "./exports/import.mjs",
+    "require": "./exports/require.cjs"
+  },
   "repository": "https://github.com/Menci/vite-plugin-top-level-await",
   "author": "Menci <huanghaorui301@gmail.com>",
   "license": "MIT",
@@ -15,7 +19,7 @@
   "scripts": {
     "build": "tsc",
     "test": "jest --verbose --coverage",
-    "format": "prettier --write '**/*.{mjs,js,ts}'"
+    "format": "prettier --write '**/*.{mjs,cjs,js,ts}'"
   },
   "devDependencies": {
     "@types/jest": "^27.4.1",
@@ -40,6 +44,7 @@
     }
   },
   "files": [
-    "/dist"
+    "/dist",
+    "/exports"
   ]
 }
