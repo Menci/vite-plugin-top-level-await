@@ -38,15 +38,15 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: ["b"], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: ["a"], transformNeeded: true }
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true }
       },
       `
-      import { qwq } from "b";
+      import { qwq } from "./b";
       await globalThis.somePromise;
     `,
       `
-      import { qwq, __tla as __tla_0 } from "b";
+      import { qwq, __tla as __tla_0 } from "./b";
       Promise.all(
         [(() => { try { return __tla_0; } catch {} })()]
       ).then(async () => {
@@ -84,17 +84,17 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: ["b"], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: ["a"], transformNeeded: true }
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true }
       },
       `
-      import { qwq } from "b";
+      import { qwq } from "./b";
       const x = await globalThis.somePromise;
       const y = 1;
       export { x, y as z };
     `,
       `
-      import { qwq, __tla as __tla_0 } from "b";
+      import { qwq, __tla as __tla_0 } from "./b";
       let x, y;
       let __tla = Promise.all(
         [(() => { try { return __tla_0; } catch {} })()]
@@ -111,23 +111,23 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: ["b", "c", "d"], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: ["a"], transformNeeded: true },
-        c: { imported: [], importedBy: ["a"], transformNeeded: false },
-        d: { imported: [], importedBy: ["a"], transformNeeded: true }
+        a: { imported: ["./b", "./c", "./d"], importedBy: [], transformNeeded: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true },
+        c: { imported: [], importedBy: ["./a"], transformNeeded: false },
+        d: { imported: [], importedBy: ["./a"], transformNeeded: true }
       },
       `
-      import { qwq } from "b";
-      import { quq as qvq } from "c";
-      import { default as qaq } from "d";
+      import { qwq } from "./b";
+      import { quq as qvq } from "./c";
+      import { default as qaq } from "./d";
       const x = await qvq[qaq].someFunc(globalThis.somePromise);
       const y = 1;
       export { x, y as default };
     `,
       `
-      import { qwq, __tla as __tla_0 } from "b";
-      import { quq as qvq } from "c";
-      import { default as qaq, __tla as __tla_1 } from "d";
+      import { qwq, __tla as __tla_0 } from "./b";
+      import { quq as qvq } from "./c";
+      import { default as qaq, __tla as __tla_1 } from "./d";
       let x, y;
       let __tla = Promise.all([
         (() => { try { return __tla_0; } catch {} })(),
@@ -275,14 +275,16 @@ describe("Transform top-level await", () => {
       },
       `
       import React from "https://esm.run/react";
-      const x = await globalThis.someFunc(React);
+      import path from "path";
+      const x = await globalThis.someFunc(React, path);
       export { x as y };
     `,
       `
       import React from "https://esm.run/react";
+      import path from "path";
       let x;
       let __tla = (async () => {
-        x = await globalThis.someFunc(React)
+        x = await globalThis.someFunc(React, path);
       })();
       export { x as y, __tla };
     `
@@ -299,8 +301,8 @@ describe("Transform top-level await", () => {
       },
       `
       const x = await Promise.all([
-        import("b"),
-        import("c"),
+        import("./b"),
+        import("./c"),
         import(globalThis.dynamicModuleName)
       ]);
       export { x as y };
@@ -309,8 +311,8 @@ describe("Transform top-level await", () => {
       let x;
       let __tla = (async () => {
         x = await Promise.all([
-          import("b"),
-          import("c").then(async m => { await m.__tla; return m; }),
+          import("./b"),
+          import("./c").then(async m => { await m.__tla; return m; }),
           import(globalThis.dynamicModuleName).then(async m => { await m.__tla; return m; })
         ]);
       })();

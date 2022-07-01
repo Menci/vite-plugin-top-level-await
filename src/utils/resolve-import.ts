@@ -8,5 +8,6 @@ function isRelativeUrl(importUrl: string) {
 
 export function resolveImport(base: string, imported: string) {
   if (!isRelativeUrl(imported)) return null;
+  if (imported.indexOf("/") === -1) return null;
   return path.join(path.dirname(base), imported);
 }

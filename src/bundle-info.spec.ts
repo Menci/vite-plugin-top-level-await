@@ -9,7 +9,7 @@ function makeTestcase(
   return Object.fromEntries(
     Object.entries(dependencyGraph).map(([moduleName, importedModules]) => [
       moduleName,
-      importedModules.map(name => `import ${name} from "${name}";\n`).join("") +
+      importedModules.map(name => `import ${name} from "./${name}";\n`).join("") +
         (moduleWithTopLevelAwait.includes(moduleName) ? "await Promise.resolve(0);\n" : "") +
         "export default null;\n"
     ])
@@ -20,12 +20,12 @@ describe("Bundle info parser", () => {
   it("should parse AST of esnext code with SWC correctly", async () => {
     const chunks = {
       a: `
-        import { x } from "b";
+        import { x } from "./b";
         const w = await x?.y?.z;
         export { w };
       `,
       b: `
-        import { w } from "a";
+        import { w } from "./a";
         const x = await w?.x?.y;
         export { x };
       `
