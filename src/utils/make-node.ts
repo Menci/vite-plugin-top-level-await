@@ -202,6 +202,7 @@ export function makeExportListDeclaration(map: [exportName: string, identifier: 
     source: null,
     // @ts-ignore
     typeOnly: false,
+    // @ts-ignore
     assets: null
   };
 }

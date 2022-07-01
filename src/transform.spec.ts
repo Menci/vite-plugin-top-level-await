@@ -237,6 +237,36 @@ describe("Transform top-level await", () => {
     );
   });
 
+  it("should work for a module with plugin-injected function/class exports", () => {
+    test(
+      "a",
+      {
+        a: { imported: [], importedBy: [], transformNeeded: true }
+      },
+      `
+      const x = await globalThis.somePromise;
+      function f0(args) { return Math.max(...args); }
+      export function f1(args) { return f1(...args, 0); }
+      export function* f2(args) { yield globalThis.qwq; }
+      export async function f3(args) { await Promise.all(globalThis.promises); }
+      export class c1 { qwq = 1 }
+      export { x };
+    `,
+      `
+      let f1, f2, f3, c1, x;
+      let __tla = (async () => {
+        x = await globalThis.somePromise;
+        function f0(args) { return Math.max(...args); }
+        f1 = function f1(args) { return f1(...args, 0); };
+        f2 = function* f2(args) { yield globalThis.qwq; };
+        f3 = async function f3(args) { await Promise.all(globalThis.promises); };
+        c1 = class c1 { qwq = 1 };
+      })();
+      export { f1, f2, f3, c1, x, __tla };
+    `
+    );
+  });
+
   it("should skip processing imports of external modules", () => {
     test(
       "a",

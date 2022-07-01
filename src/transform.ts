@@ -37,9 +37,12 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
   // Extract import declarations
   const imports = ast.body.filter((item): item is SWC.ImportDeclaration => item.type === "ImportDeclaration");
 
+  const exportMap: Record<string, string> = {};
+
   // Extract export declarations
   // In Rollup's output, there should be only one, and as the last top-level statement
-  const exports = ast.body.filter((item): item is SWC.ExportNamedDeclaration => {
+  // But some plugins (e.g. @vitejs/plugin-legacy) may inject others like "export function"
+  const namedExports = ast.body.filter((item, i): item is SWC.ExportNamedDeclaration => {
     switch (item.type) {
       /* istanbul ignore next */
       case "ExportAllDeclaration":
@@ -47,27 +50,34 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
       case "ExportDefaultDeclaration":
       /* istanbul ignore next */
       case "ExportDefaultExpression":
-      /* istanbul ignore next */
-      case "ExportDeclaration":
         raiseUnexpectedNode("top-level statement", item.type);
+      case "ExportDeclaration":
+        if (item.declaration.type === "FunctionDeclaration" || item.declaration.type === "ClassDeclaration") {
+          // Remove the "export" keyword from this statement
+          ast.body[i] = item.declaration;
+          exportMap[item.declaration.identifier.value] = item.declaration.identifier.value;
+        } else {
+          /* istanbul ignore next */
+          raiseUnexpectedNode("top-level export declaration", item.declaration.type);
+        }
+
+        return false;
       case "ExportNamedDeclaration":
         item.specifiers.forEach(specifier => {
           /* istanbul ignore if */
           if (specifier.type !== "ExportSpecifier") {
             raiseUnexpectedNode("export specifier", specifier.type);
           }
+
+          exportMap[(specifier.exported || specifier.orig).value] = specifier.orig.value;
         });
+
         return true;
     }
 
     return false;
   });
 
-  const exportMap = Object.fromEntries(
-    exports.flatMap(item =>
-      item.specifiers.map(({ orig, exported }: SWC.NamedExportSpecifier) => [(exported || orig).value, orig.value])
-    )
-  );
   const exportedNames = Object.values(exportMap);
   const exportedNameSet = new Set(exportedNames);
 
@@ -98,7 +108,7 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
 
   const topLevelStatements = ast.body.filter(
     (item): item is SWC.Statement =>
-      !(imports as SWC.ModuleItem[]).includes(item) && !(exports as SWC.ModuleItem[]).includes(item)
+      !(imports as SWC.ModuleItem[]).includes(item) && !(namedExports as SWC.ModuleItem[]).includes(item)
   );
   const exportedNamesDeclaration = makeVariablesDeclaration(exportedNames);
   const warppedStatements = topLevelStatements.flatMap<SWC.Statement>(stmt => {
