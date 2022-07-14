@@ -1,7 +1,7 @@
 import { posix as path } from "path";
 
 function isRelativeUrl(importUrl: string) {
-  const testOrigin = new URL("https://test-relative." + Math.random());
+  const testOrigin = new URL("https://test-relative." + Math.random() + ".com");
   const url = new URL(importUrl, testOrigin);
   return url.origin === testOrigin.origin;
 }
