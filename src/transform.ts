@@ -228,7 +228,7 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
     const importedModuleName = resolveImport(moduleName, importDeclaration.source.value);
     if (!importedModuleName) continue;
 
-    if (bundleInfo[importedModuleName].transformNeeded) {
+    if (bundleInfo[importedModuleName]?.transformNeeded) {
       importDeclaration.specifiers.push(
         makeImportSpecifier(options.promiseExportName, options.promiseImportName(importedPromiseCount))
       );

@@ -57,7 +57,7 @@ export async function parseBundleInfo(bundleAsts: Record<string, SWC.Module>): P
 
     // Add reverse edges for dependency graph traversal
     moduleInfo.imported.forEach(importedModuleName => {
-      bundleInfo[importedModuleName].importedBy.push(moduleName);
+      bundleInfo[importedModuleName]?.importedBy.push(moduleName);
     });
 
     moduleInfo.transformNeeded = findTopLevelAwait(ast);
