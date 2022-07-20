@@ -276,12 +276,14 @@ describe("Transform top-level await", () => {
       `
       import React from "https://esm.run/react";
       import path from "path";
+      import MuiMaterial from "@mui/material";
       const x = await globalThis.someFunc(React, path);
       export { x as y };
     `,
       `
       import React from "https://esm.run/react";
       import path from "path";
+      import MuiMaterial from "@mui/material";
       let x;
       let __tla = (async () => {
         x = await globalThis.someFunc(React, path);
