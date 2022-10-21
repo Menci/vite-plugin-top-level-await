@@ -1,4 +1,4 @@
-import { Plugin } from "vite";
+import { Plugin, ResolvedConfig } from "vite";
 import type { OutputChunk } from "rollup";
 import * as SWC from "@swc/core";
 import esbuild from "./esbuild";
@@ -9,8 +9,7 @@ import { transformModule } from "./transform";
 
 export type { Options } from "./options";
 
-type ViteConfig = Parameters<Plugin["configResolved"]>[0];
-type ViteTarget = ViteConfig["build"]["target"];
+type ViteTarget = ResolvedConfig["build"]["target"];
 
 export default function topLevelAwait(options?: Options): Plugin {
   const resolvedOptions: Options = {

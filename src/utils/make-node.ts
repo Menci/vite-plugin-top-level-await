@@ -9,8 +9,7 @@ export function makeIdentifier(name: string): SWC.Identifier {
     type: "Identifier",
     span: span(),
     value: name,
-    optional: false,
-    typeAnnotation: null
+    optional: false
   };
 }
 
@@ -80,7 +79,8 @@ export function makeImportSpecifier(name: string, as: string): SWC.ImportSpecifi
     type: "ImportSpecifier",
     span: span(),
     local: makeIdentifier(as),
-    imported: as === name ? /* istanbul ignore next */ null : makeIdentifier(name)
+    imported: as === name ? /* istanbul ignore next */ null : makeIdentifier(name),
+    isTypeOnly: false
   };
 }
 
@@ -197,7 +197,8 @@ export function makeExportListDeclaration(map: [exportName: string, identifier: 
       type: "ExportSpecifier",
       span: span(),
       orig: makeIdentifier(identifier),
-      exported: identifier === exportName ? null : makeIdentifier(exportName)
+      exported: identifier === exportName ? null : makeIdentifier(exportName),
+      isTypeOnly: false
     })),
     source: null,
     // @ts-ignore
