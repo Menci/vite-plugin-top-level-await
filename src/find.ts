@@ -29,11 +29,6 @@ class FindTopLevelAwaitVisitor extends Visitor {
     }
     return super.visitForOfStatement(stmt);
   }
-
-  // Workaround swc-project/swc#3808
-  visitOptionalChainingExpression(expression: SWC.OptionalChainingExpression) {
-    return this.visitExpression(expression["base"]);
-  }
 }
 
 export function findTopLevelAwait(ast: SWC.Module) {
