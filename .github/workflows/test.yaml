@@ -10,11 +10,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node: ["12", "14", "16", "18"]
+        node: ["14", "16", "18"]
         vite: ["2", "3"]
-        exclude:
-          - node: "12"
-            vite: "3"
     name: Node.js ${{ matrix.node }} + Vite ${{ matrix.vite }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
