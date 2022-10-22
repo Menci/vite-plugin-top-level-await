@@ -267,6 +267,27 @@ describe("Transform top-level await", () => {
     );
   });
 
+  it("should work for a module with manual re-exports", () => {
+    test(
+      "a",
+      {
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true }
+      },
+      `
+      import { default as qwq } from "./b";
+      export { qwq };
+    `,
+      `
+      import { default as qwq, __tla as __tla_0 } from "./b";
+      let __tla = Promise.all([
+        (() => { try { return __tla_0; } catch {} })(),
+      ]).then(async () => {});
+      export { qwq, __tla };
+    `
+    );
+  });
+
   it("should skip processing imports of external modules", () => {
     test(
       "a",

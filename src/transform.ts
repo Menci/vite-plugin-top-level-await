@@ -110,7 +110,10 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
     (item): item is SWC.Statement =>
       !(imports as SWC.ModuleItem[]).includes(item) && !(namedExports as SWC.ModuleItem[]).includes(item)
   );
-  const exportedNamesDeclaration = makeVariablesDeclaration(exportedNames);
+  const importedNames = new Set(
+    imports.flatMap(importStmt => importStmt.specifiers.map(specifier => specifier.local.value))
+  );
+  const exportedNamesDeclaration = makeVariablesDeclaration(exportedNames.filter(name => !importedNames.has(name)));
   const warppedStatements = topLevelStatements.flatMap<SWC.Statement>(stmt => {
     if (stmt.type === "VariableDeclaration") {
       const declaredNames = stmt.declarations.flatMap(decl => resolvePattern(decl.id));
