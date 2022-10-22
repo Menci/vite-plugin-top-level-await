@@ -2,43 +2,43 @@
 
 import * as SWC from "@swc/core";
 
-import { findTopLevelAwait } from "./find";
+import { CodePattern, findHighestPattern } from "./find";
 
-function test(hasTopLevelAwait: boolean, code: string) {
-  expect(findTopLevelAwait(SWC.parseSync(code, { target: "es2022", syntax: "ecmascript" }))).toBe(hasTopLevelAwait);
+function test(highestPattern: CodePattern, code: string) {
+  expect(findHighestPattern(SWC.parseSync(code, { target: "es2022", syntax: "ecmascript" }))).toBe(highestPattern);
 }
 
 describe("Find top-level await usage in module", () => {
-  it("should return true with top-level await", () => {
+  it("should work with top-level await", () => {
     test(
-      true,
+      CodePattern.TopLevelAwait,
       `
       await Promise.resolve(0);
     `
     );
   });
 
-  it("should return true with top-level await in a complex expression", () => {
+  it("should work with top-level await in a complex expression", () => {
     test(
-      true,
+      CodePattern.TopLevelAwait,
       `
       const x = x?.y[fun([await z])];
     `
     );
   });
 
-  it("should return false without top-level await", () => {
+  it("should work without top-level await", () => {
     test(
-      false,
+      null,
       `
       console.log("qwq");
     `
     );
   });
 
-  it("should return true with top-level for-await statements", () => {
+  it("should work with top-level for-await statements", () => {
     test(
-      true,
+      CodePattern.TopLevelAwait,
       `
       for await (const x of y) {
         console.log(x);
@@ -47,9 +47,9 @@ describe("Find top-level await usage in module", () => {
     );
   });
 
-  it("should return false with top-level for (non-await) statements", () => {
+  it("should work with top-level for (non-await) statements", () => {
     test(
-      false,
+      null,
       `
       for (const x of y) {
         console.log(x);
@@ -58,9 +58,9 @@ describe("Find top-level await usage in module", () => {
     );
   });
 
-  it("should return true with top-level await in block statements", () => {
+  it("should work with top-level await in block statements", () => {
     test(
-      true,
+      CodePattern.TopLevelAwait,
       `
       for (const x of y) {
         if (x === 1) {
@@ -71,9 +71,9 @@ describe("Find top-level await usage in module", () => {
     );
   });
 
-  it("should return false with await in functions", () => {
+  it("should work with await in functions", () => {
     test(
-      false,
+      null,
       `
       console.log(async () => await x.func());
       async function test() {
@@ -85,9 +85,9 @@ describe("Find top-level await usage in module", () => {
     );
   });
 
-  it("should return false with await in class methods", () => {
+  it("should work with await in class methods", () => {
     test(
-      false,
+      null,
       `
       const Class = class Class {
         async method() {
@@ -101,6 +101,17 @@ describe("Find top-level await usage in module", () => {
             console.log(y);
           }
         }
+      }
+    `
+    );
+  });
+
+  it("should work with dynamic import but without top-level await", () => {
+    test(
+      CodePattern.DynamicImport,
+      `
+      function qwqwq() {
+        return import("qwq");
       }
     `
     );

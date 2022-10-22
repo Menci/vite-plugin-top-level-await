@@ -4,12 +4,14 @@ import { parseBundleAsts, parseBundleInfo } from "./bundle-info";
 
 function makeTestcase(
   dependencyGraph: Record<string, string[]>,
-  moduleWithTopLevelAwait: string[]
+  moduleWithTopLevelAwait: string[],
+  moduleWithDynamicImport: string[]
 ): Record<string, string> {
   return Object.fromEntries(
     Object.entries(dependencyGraph).map(([moduleName, importedModules]) => [
       moduleName,
       importedModules.map(name => `import ${name} from "./${name}";\n`).join("") +
+        (moduleWithDynamicImport.includes(moduleName) ? "function qwq() { return import(window.someModule); }" : "") +
         (moduleWithTopLevelAwait.includes(moduleName) ? "await Promise.resolve(0);\n" : "") +
         "export default null;\n"
     ])
@@ -51,7 +53,7 @@ describe("Bundle info parser", () => {
       h: ["i"],
       i: []
     };
-    const bundleInfo = await parseBundleInfo(await parseBundleAsts(makeTestcase(dependencyGraph, [])));
+    const bundleInfo = await parseBundleInfo(await parseBundleAsts(makeTestcase(dependencyGraph, [], [])));
 
     for (const moduleName in bundleInfo) {
       expect(bundleInfo[moduleName].imported).toIncludeSameMembers(dependencyGraph[moduleName]);
@@ -67,7 +69,7 @@ describe("Bundle info parser", () => {
     const dependencyGraph = {
       a: ["b", "c", "d"],
       b: ["c", "d"],
-      c: [],
+      c: ["i"],
       d: ["b", "f"],
       e: ["a", "c"],
       f: ["g"],
@@ -76,11 +78,12 @@ describe("Bundle info parser", () => {
       i: []
     };
     const moduleWithTopLevelAwait = ["f", "h"];
+    const moduleWithDynamicImport = ["i"];
     const bundleInfo = await parseBundleInfo(
-      await parseBundleAsts(makeTestcase(dependencyGraph, moduleWithTopLevelAwait))
+      await parseBundleAsts(makeTestcase(dependencyGraph, moduleWithTopLevelAwait, moduleWithDynamicImport))
     );
 
-    const expectedModulesNeedTransform = ["a", "b", "d", "e", "f", "g", "h"];
+    const expectedModulesNeedTransform = ["a", "b", "d", "e", "f", "g", "h", "i"];
     expect(
       Object.entries(bundleInfo)
         .filter(([, info]) => info.transformNeeded)

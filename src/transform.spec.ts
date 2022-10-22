@@ -21,7 +21,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       await globalThis.somePromise;
@@ -38,8 +38,8 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: ["./b"], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: ["./a"], transformNeeded: true }
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true, withTopLevelAwait: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       import { qwq } from "./b";
@@ -60,7 +60,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       const w = 0;
@@ -84,8 +84,8 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: ["./b"], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: ["./a"], transformNeeded: true }
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true, withTopLevelAwait: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       import { qwq } from "./b";
@@ -111,10 +111,10 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: ["./b", "./c", "./d"], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: ["./a"], transformNeeded: true },
-        c: { imported: [], importedBy: ["./a"], transformNeeded: false },
-        d: { imported: [], importedBy: ["./a"], transformNeeded: true }
+        a: { imported: ["./b", "./c", "./d"], importedBy: [], transformNeeded: true, withTopLevelAwait: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true, withTopLevelAwait: true },
+        c: { imported: [], importedBy: ["./a"], transformNeeded: false, withTopLevelAwait: false },
+        d: { imported: [], importedBy: ["./a"], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       import { qwq } from "./b";
@@ -145,7 +145,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       const x = await globalThis.somePromise;
@@ -173,7 +173,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       const x = await globalThis.somePromise;
@@ -199,7 +199,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       const { x, _0: { _1: { y, z } } = { _0: { _1: { y: 1, z: "" } } }, ...w } = await globalThis.somePromise;
@@ -220,7 +220,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       const [x, [[[y, z] = [0, 1], w], ...u] = globalThis.someArray, ...v] = await globalThis.somePromise;
@@ -241,7 +241,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       const x = await globalThis.somePromise;
@@ -271,8 +271,8 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: ["./b"], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: ["./a"], transformNeeded: true }
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true, withTopLevelAwait: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       import { default as qwq } from "./b";
@@ -292,7 +292,7 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       import React from "https://esm.run/react";
@@ -318,9 +318,9 @@ describe("Transform top-level await", () => {
     test(
       "a",
       {
-        a: { imported: [], importedBy: [], transformNeeded: true },
-        b: { imported: [], importedBy: [], transformNeeded: false },
-        c: { imported: [], importedBy: [], transformNeeded: true }
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true },
+        b: { imported: [], importedBy: [], transformNeeded: false, withTopLevelAwait: false },
+        c: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
       const x = await Promise.all([
