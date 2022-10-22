@@ -22,15 +22,23 @@ export default function topLevelAwait(options?: Options): Plugin {
 
   return {
     name: "vite-plugin-top-level-await",
-    apply: "build",
     configResolved(config) {
-      // By default Vite transforms code with esbuild with target for a browser list with ES modules support
-      // This cause esbuild to throw an exception when there're top-level awaits in code
-      // Let's backup the original target and override the esbuild target with "esnext", which allows TLAs
-      buildTarget = config.build.target;
-      config.build.target = "esnext";
+      if (config.command === "build") {
+        // By default Vite transforms code with esbuild with target for a browser list with ES modules support
+        // This cause esbuild to throw an exception when there're top-level awaits in code
+        // Let's backup the original target and override the esbuild target with "esnext", which allows TLAs
+        buildTarget = config.build.target;
+        config.build.target = "esnext";
 
-      minify = !!config.build.minify;
+        minify = !!config.build.minify;
+      }
+
+      if (config.command === "serve") {
+        // Fix errors in NPM packages which are getting pre-processed in development build
+        if (config.optimizeDeps?.esbuildOptions) {
+          config.optimizeDeps.esbuildOptions.target = "esnext";
+        }
+      }
     },
     async generateBundle(bundleOptions, bundle) {
       // Process ES modules (modern) target only since TLAs in legacy builds are handled by SystemJS
