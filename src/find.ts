@@ -37,7 +37,7 @@ class FindPatternsVisitor extends Visitor {
 
   visitAwaitExpression(expr: SWC.AwaitExpression): SWC.Expression {
     if (this.currentLevel === 0) throw new FoundTopLevelAwaitError();
-    return expr;
+    return super.visitAwaitExpression(expr);
   }
 
   visitForOfStatement(stmt: SWC.ForOfStatement): SWC.Statement {
