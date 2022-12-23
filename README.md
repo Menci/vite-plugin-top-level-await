@@ -1,6 +1,6 @@
 # vite-plugin-top-level-await
 
-[![Test Status](https://img.shields.io/github/workflow/status/Menci/vite-plugin-top-level-await/Test?style=flat-square)](https://github.com/Menci/vite-plugin-top-level-await/actions?query=workflow%3ATest)
+[![Test Status](https://img.shields.io/github/actions/workflow/status/Menci/vite-plugin-top-level-await/test.yaml?branch=main&style=flat-square)](https://github.com/Menci/vite-plugin-top-level-await/actions?query=workflow%3ATest)
 [![npm](https://img.shields.io/npm/v/vite-plugin-top-level-await?style=flat-square)](https://www.npmjs.com/package/vite-plugin-top-level-await)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg?style=flat-square)](http://commitizen.github.io/cz-cli/)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
