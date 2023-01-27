@@ -56,7 +56,13 @@ export default function topLevelAwait(options?: Options): Plugin {
         Object.keys(bundleChunks).map(async moduleName => {
           if (!bundleInfo[moduleName].transformNeeded) return;
 
-          const newAst = transformModule(bundleAsts[moduleName], moduleName, bundleInfo, resolvedOptions);
+          const newAst = transformModule(
+            bundleChunks[moduleName],
+            bundleAsts[moduleName],
+            moduleName,
+            bundleInfo,
+            resolvedOptions
+          );
           let code = SWC.printSync(newAst, { minify }).code;
           if (buildTarget !== "esnext") {
             code = (

@@ -19,6 +19,7 @@ import {
   makeStatement,
   makeAwaitExpression
 } from "./utils/make-node";
+import { RandomIdentifierGenerator } from "./utils/random-identifier";
 import { resolveImport } from "./utils/resolve-import";
 import { resolvePattern } from "./utils/resolve-pattern";
 
@@ -33,7 +34,53 @@ function transformByType(node: object, type: string, filter: (node: SWC.Node) =>
   return node;
 }
 
-export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo: BundleInfo, options: Options) {
+function declarationToExpression(
+  decl: SWC.FunctionDeclaration | SWC.ClassDeclaration
+): SWC.FunctionExpression | SWC.ClassExpression {
+  if (decl.type === "FunctionDeclaration") {
+    return <SWC.FunctionExpression>{
+      ...decl,
+      type: "FunctionExpression"
+    };
+  } else if (decl.type === "ClassDeclaration") {
+    return <SWC.ClassExpression>{
+      ...decl,
+      type: "ClassExpression"
+    };
+  } else {
+    /* istanbul ignore next */
+    raiseUnexpectedNode("declaration", (decl as SWC.Node).type);
+  }
+}
+
+function expressionToDeclaration(
+  expr: SWC.FunctionExpression | SWC.ClassExpression
+): SWC.FunctionDeclaration | SWC.ClassDeclaration {
+  if (expr.type === "FunctionExpression") {
+    return <SWC.FunctionDeclaration>{
+      ...expr,
+      type: "FunctionDeclaration"
+    };
+  } else if (expr.type === "ClassExpression") {
+    return <SWC.ClassDeclaration>{
+      ...expr,
+      type: "ClassDeclaration"
+    };
+  } else {
+    /* istanbul ignore next */
+    raiseUnexpectedNode("expression", (expr as SWC.Node).type);
+  }
+}
+
+export function transformModule(
+  code: string,
+  ast: SWC.Module,
+  moduleName: string,
+  bundleInfo: BundleInfo,
+  options: Options
+) {
+  const randomIdentifier = new RandomIdentifierGenerator(code);
+
   // Extract import declarations
   const imports = ast.body.filter((item): item is SWC.ImportDeclaration => item.type === "ImportDeclaration");
 
@@ -46,11 +93,30 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
     switch (item.type) {
       /* istanbul ignore next */
       case "ExportAllDeclaration":
-      /* istanbul ignore next */
-      case "ExportDefaultDeclaration":
-      /* istanbul ignore next */
-      case "ExportDefaultExpression":
         raiseUnexpectedNode("top-level statement", item.type);
+      case "ExportDefaultExpression":
+        // Convert to a variable
+        const identifier = randomIdentifier.generate();
+        ast.body[i] = makeVariableInitDeclaration(identifier, item.expression);
+        exportMap["default"] = identifier;
+        return false;
+      case "ExportDefaultDeclaration":
+        if (item.decl.type === "FunctionExpression" || item.decl.type === "ClassExpression") {
+          // Convert to a declaration or variable
+          if (item.decl.identifier) {
+            ast.body[i] = expressionToDeclaration(item.decl);
+            exportMap["default"] = item.decl.identifier.value;
+          } else {
+            const identifier = randomIdentifier.generate();
+            ast.body[i] = makeVariableInitDeclaration(identifier, item.decl);
+            exportMap["default"] = identifier;
+          }
+        } else {
+          /* istanbul ignore next */
+          raiseUnexpectedNode("top-level export declaration", item.decl.type);
+        }
+
+        return false;
       case "ExportDeclaration":
         if (item.declaration.type === "FunctionDeclaration" || item.declaration.type === "ClassDeclaration") {
           // Remove the "export" keyword from this statement
@@ -132,22 +198,10 @@ export function transformModule(ast: SWC.Module, moduleName: string, bundleInfo:
       const unexportedDeclarations = makeVariablesDeclaration(unexportedDeclaredNames);
 
       return unexportedDeclarations ? [unexportedDeclarations, ...assignmentStatements] : assignmentStatements;
-    } else if (stmt.type === "FunctionDeclaration") {
+    } else if (stmt.type === "FunctionDeclaration" || stmt.type === "ClassDeclaration") {
       const name = stmt.identifier.value;
       if (!exportedNameSet.has(name)) return stmt;
-
-      return makeAssignmentStatement(makeIdentifier(name), <SWC.FunctionExpression>{
-        ...stmt,
-        type: "FunctionExpression"
-      });
-    } else if (stmt.type === "ClassDeclaration") {
-      const name = stmt.identifier.value;
-      if (!exportedNameSet.has(name)) return stmt;
-
-      return makeAssignmentStatement(makeIdentifier(name), <SWC.ClassExpression>{
-        ...stmt,
-        type: "ClassExpression"
-      });
+      return makeAssignmentStatement(makeIdentifier(name), declarationToExpression(stmt));
     } else {
       return stmt;
     }

@@ -11,7 +11,7 @@ function test(moduleName: string, bundleInfo: BundleInfo, code: string, expected
   const print = (ast: SWC.Module) => SWC.printSync(ast).code;
 
   const originalAst = parse(code);
-  const transformedAst = transformModule(originalAst, moduleName, bundleInfo, DEFAULT_OPTIONS);
+  const transformedAst = transformModule(code, originalAst, moduleName, bundleInfo, DEFAULT_OPTIONS);
 
   expect(print(transformedAst)).toBe(print(parse(expectedResult)));
 }
@@ -263,6 +263,90 @@ describe("Transform top-level await", () => {
         c1 = class c1 { qwq = 1 };
       })();
       export { f1, f2, f3, c1, x, __tla };
+    `
+    );
+  });
+
+  it("should work for a module with default export declaration (with function name)", () => {
+    test(
+      "a",
+      {
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
+      },
+      `
+      const a = await globalThis.somePromise;
+      export default function A(b, c, d) { return a; }
+    `,
+      `
+      let A;
+      let __tla = (async () => {
+        const a = await globalThis.somePromise;
+        A = function A(b, c, d) { return a; };
+      })();
+      export { A as default, __tla };
+    `
+    );
+  });
+
+  it("should work for a module with default export declaration (with class name)", () => {
+    test(
+      "a",
+      {
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
+      },
+      `
+      const a = await globalThis.somePromise;
+      export default class A { prop = "qwq"; }
+    `,
+      `
+      let A;
+      let __tla = (async () => {
+        const a = await globalThis.somePromise;
+        A = class A { prop = "qwq"; };
+      })();
+      export { A as default, __tla };
+    `
+    );
+  });
+
+  it("should work for a module with default export declaration (without name)", () => {
+    test(
+      "a",
+      {
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
+      },
+      `
+      const a = await globalThis.somePromise;
+      export default function (b, c, d) { return a; }
+    `,
+      `
+      let var_69d2a4fc_d77c_5996_9dda_fc4d543f0a82;
+      let __tla = (async () => {
+        const a = await globalThis.somePromise;
+        var_69d2a4fc_d77c_5996_9dda_fc4d543f0a82 = function (b, c, d) { return a; };
+      })();
+      export { var_69d2a4fc_d77c_5996_9dda_fc4d543f0a82 as default, __tla };
+    `
+    );
+  });
+
+  it("should work for a module with default export expression", () => {
+    test(
+      "a",
+      {
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
+      },
+      `
+      const a = await globalThis.somePromise;
+      export default globalThis.someFunc().someProp + "qwq";
+    `,
+      `
+      let var_b51c2b27_5763_5458_95c3_0273366c9dee;
+      let __tla = (async () => {
+        const a = await globalThis.somePromise;
+        var_b51c2b27_5763_5458_95c3_0273366c9dee = globalThis.someFunc().someProp + "qwq";
+      })();
+      export { var_b51c2b27_5763_5458_95c3_0273366c9dee as default, __tla };
     `
     );
   });
