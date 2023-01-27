@@ -22,6 +22,7 @@ export default function topLevelAwait(options?: Options): Plugin {
 
   return {
     name: "vite-plugin-top-level-await",
+    enforce: "post",
     configResolved(config) {
       if (config.command === "build") {
         // By default Vite transforms code with esbuild with target for a browser list with ES modules support
