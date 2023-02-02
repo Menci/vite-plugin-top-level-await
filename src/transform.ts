@@ -240,7 +240,7 @@ export function transformModule(
         const importedModuleName = resolveImport(moduleName, argument.value);
 
         // Skip transform
-        if (importedModuleName && !bundleInfo[importedModuleName].transformNeeded) return call;
+        if (importedModuleName && !bundleInfo[importedModuleName]?.transformNeeded) return call;
       }
 
       return makeCallExpression(makeMemberExpression(call, "then"), [
@@ -338,7 +338,7 @@ export function transformModule(
 
   const newTopLevel: SWC.ModuleItem[] = [...imports, exportedNamesDeclaration];
 
-  if (exportedNames.length > 0 || bundleInfo[moduleName].importedBy.length > 0) {
+  if (exportedNames.length > 0 || bundleInfo[moduleName]?.importedBy.length > 0) {
     // If the chunk is being imported, append export of the TLA promise to export list
     const promiseDeclaration = makeVariableInitDeclaration(options.promiseExportName, promiseExpression);
     exportMap[options.promiseExportName] = options.promiseExportName;
