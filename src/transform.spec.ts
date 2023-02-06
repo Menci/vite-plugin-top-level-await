@@ -427,4 +427,18 @@ describe("Transform top-level await", () => {
     `
     );
   });
+  it("should fail gracefully if bundleInfo is undefined", () => {
+    test(
+      "css-module.js",
+      {},
+      `
+    await globalThis.someFunc(import("./css-module.js"));
+  `,
+      `
+    (async () => {
+      await globalThis.someFunc(import("./css-module.js"));
+    })();
+  `
+    );
+  });
 });
