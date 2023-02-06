@@ -432,11 +432,11 @@ describe("Transform top-level await", () => {
       "css-module.js",
       {},
       `
-    await globalThis.somePromise;
+    await globalThis.someFunc(import("./css-module.js"));
   `,
       `
     (async () => {
-      await globalThis.somePromise;
+      await globalThis.someFunc(import("./css-module.js"));
     })();
   `
     );
