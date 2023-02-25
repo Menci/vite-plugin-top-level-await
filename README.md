@@ -33,6 +33,13 @@ export default defineConfig({
 });
 ```
 
+## Workers
+
+You can use this plugin for workers (by putting it in `config.worker.plugins`).
+
+* If the worker format is ES, the plugin works normally.
+* If the worker format is IIFE, the plugin first let Vite build your worker as an ES bundle since IIFE doesn't support top-level awaits, and then build the transformed ES bundle to IIFE. Please use IIFE when targeting Firefox.
+
 ## Note
 
 This plugin transforms code from:

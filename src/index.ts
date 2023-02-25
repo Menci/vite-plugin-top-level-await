@@ -1,5 +1,7 @@
+import path from "path";
 import { Plugin, ResolvedConfig } from "vite";
-import type { OutputChunk } from "rollup";
+import { rollup, OutputChunk } from "rollup";
+import virtual from "@rollup/plugin-virtual";
 import * as SWC from "@swc/core";
 import esbuild from "./esbuild";
 
@@ -17,14 +19,30 @@ export default function topLevelAwait(options?: Options): Plugin {
     ...(options || {})
   };
 
+  let isWorker = false;
+  let isWorkerIifeRequested = false;
+
+  let assetsDir = "";
   let buildTarget: ViteTarget;
   let minify: boolean;
 
   return {
     name: "vite-plugin-top-level-await",
     enforce: "post",
+    outputOptions(options) {
+      if (isWorker && options.format === "iife") {
+        // The the worker bundle's output format to ES to allow top-level awaits
+        // We'll use another rollup build to convert it back to IIFE
+        options.format = "es";
+        isWorkerIifeRequested = true;
+      }
+    },
     configResolved(config) {
       if (config.command === "build") {
+        if (config.isWorker) {
+          isWorker = true;
+        }
+
         // By default Vite transforms code with esbuild with target for a browser list with ES modules support
         // This cause esbuild to throw an exception when there're top-level awaits in code
         // Let's backup the original target and override the esbuild target with "esnext", which allows TLAs
@@ -32,6 +50,8 @@ export default function topLevelAwait(options?: Options): Plugin {
         config.build.target = "esnext";
 
         minify = !!config.build.minify;
+
+        assetsDir = config.build.assetsDir;
       }
 
       if (config.command === "serve") {
@@ -77,6 +97,46 @@ export default function topLevelAwait(options?: Options): Plugin {
           (bundle[moduleName] as OutputChunk).code = code;
         })
       );
+
+      if (isWorker && isWorkerIifeRequested) {
+        // Get the entry chunk
+        const chunkNames = Object.keys(bundle).filter(key => bundle[key].type === "chunk");
+        const entry = chunkNames.find(key => (bundle[key] as OutputChunk).isEntry);
+        if (!entry) {
+          throw new Error(`Entry not found in worker bundle! Please submit an issue with a reproducible project.`);
+        }
+
+        // Build a new bundle to convert ESM to IIFE
+        // Assets are not touched
+        const newBuild = await rollup({
+          input: entry,
+          plugins: [virtual(Object.fromEntries(chunkNames.map(key => [key, (bundle[key] as OutputChunk).code])))]
+        });
+
+        // IIFE bundle is always a single file
+        const {
+          output: [newEntry]
+        } = await newBuild.generate({
+          format: "iife",
+          entryFileNames: path.posix.join(assetsDir, "[name].js")
+        });
+
+        // Minify with ESBuild
+        if (minify) {
+          newEntry.code = (
+            await esbuild.transform(newEntry.code, {
+              minify: true,
+              target: buildTarget as string | string[]
+            })
+          ).code;
+        }
+
+        // Remove extra chunks and replace ESM entry with IIFE entry
+        for (const chunkName of chunkNames) {
+          if (chunkName !== entry) delete bundle[chunkName];
+        }
+        bundle[entry] = newEntry;
+      }
     }
   };
 }
