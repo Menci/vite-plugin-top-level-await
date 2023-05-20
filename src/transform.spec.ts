@@ -351,6 +351,26 @@ describe("Transform top-level await", () => {
     );
   });
 
+  it("should work for a module with default and named export of the same identifier", () => {
+    test(
+      "a",
+      {
+        a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
+      },
+      `
+      const a = await globalThis.somePromise;
+      export { a, a as default };
+    `,
+      `
+      let a;
+      let __tla = (async () => {
+        a = await globalThis.somePromise;
+      })();
+      export { a, a as default, __tla };
+    `
+    );
+  });
+
   it("should work for a module with manual re-exports", () => {
     test(
       "a",

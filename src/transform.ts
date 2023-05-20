@@ -144,8 +144,8 @@ export function transformModule(
     return false;
   });
 
-  const exportedNames = Object.values(exportMap);
-  const exportedNameSet = new Set(exportedNames);
+  const exportedNameSet = new Set(Object.values(exportMap));
+  const exportedNames = Array.from(exportedNameSet);
 
   /*
    * Move ALL top-level statements to an async IIFE:
