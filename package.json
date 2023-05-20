@@ -4,6 +4,7 @@
   "description": "Transform code to support top-level await in normal browsers for Vite.",
   "main": "dist/index.js",
   "exports": {
+    "types": "./dist/index.d.ts",
     "import": "./exports/import.mjs",
     "require": "./exports/require.cjs"
   },
