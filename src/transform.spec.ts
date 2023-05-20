@@ -160,9 +160,9 @@ describe("Transform top-level await", () => {
       let __tla = (async () => {
         x = await globalThis.somePromise;
         function f0(args) { return Math.max(...args); }
-        f1 = function f1(args) { return f1(...args, 0); };
-        f2 = function* f2(args) { yield globalThis.qwq; };
-        f3 = async function f3(args) { await Promise.all(globalThis.promises); };
+        f1 = function (args) { return f1(...args, 0); };
+        f2 = function* (args) { yield globalThis.qwq; };
+        f3 = async function (args) { await Promise.all(globalThis.promises); };
       })();
       export { x, f1 as func1, f2 as func2, f3 as func3, __tla };
     `
@@ -186,9 +186,9 @@ describe("Transform top-level await", () => {
       let x, C0, C2;
       let __tla = (async () => {
         x = await globalThis.somePromise;
-        C0 = class C0 { method0() { return 0; } };
+        C0 = class { method0() { return 0; } };
         class C1 extends C0 { method1() { return 1; } }
-        C2 = class C2 extends C1 { method2() { return 2; } };
+        C2 = class extends C1 { method2() { return 2; } };
       })();
       export { x, C0 as Class0, C2 as Class2, __tla };
     `
@@ -257,10 +257,10 @@ describe("Transform top-level await", () => {
       let __tla = (async () => {
         x = await globalThis.somePromise;
         function f0(args) { return Math.max(...args); }
-        f1 = function f1(args) { return f1(...args, 0); };
-        f2 = function* f2(args) { yield globalThis.qwq; };
-        f3 = async function f3(args) { await Promise.all(globalThis.promises); };
-        c1 = class c1 { qwq = 1 };
+        f1 = function (args) { return f1(...args, 0); };
+        f2 = function* (args) { yield globalThis.qwq; };
+        f3 = async function (args) { await Promise.all(globalThis.promises); };
+        c1 = class { qwq = 1 };
       })();
       export { f1, f2, f3, c1, x, __tla };
     `
@@ -281,7 +281,7 @@ describe("Transform top-level await", () => {
       let A;
       let __tla = (async () => {
         const a = await globalThis.somePromise;
-        A = function A(b, c, d) { return a; };
+        A = function (b, c, d) { return a; };
       })();
       export { A as default, __tla };
     `
@@ -302,7 +302,7 @@ describe("Transform top-level await", () => {
       let A;
       let __tla = (async () => {
         const a = await globalThis.somePromise;
-        A = class A { prop = "qwq"; };
+        A = class { prop = "qwq"; };
       })();
       export { A as default, __tla };
     `

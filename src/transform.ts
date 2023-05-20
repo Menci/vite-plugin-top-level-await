@@ -40,11 +40,13 @@ function declarationToExpression(
   if (decl.type === "FunctionDeclaration") {
     return <SWC.FunctionExpression>{
       ...decl,
+      identifier: null,
       type: "FunctionExpression"
     };
   } else if (decl.type === "ClassDeclaration") {
     return <SWC.ClassExpression>{
       ...decl,
+      identifier: null,
       type: "ClassExpression"
     };
   } else {
