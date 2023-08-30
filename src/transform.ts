@@ -249,7 +249,7 @@ export function transformModule(
         makeArrowFunction(
           ["m"],
           [
-            makeStatement(makeAwaitExpression(makeMemberExpression("m", "__tla"))),
+            makeStatement(makeAwaitExpression(makeMemberExpression("m", options.promiseExportName))),
             makeReturnStatement(makeIdentifier("m"))
           ],
           true
