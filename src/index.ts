@@ -26,6 +26,16 @@ export default function topLevelAwait(options?: Options): Plugin {
   let buildTarget: ViteTarget;
   let minify: boolean;
 
+  const buildRawTarget = async (code: string) => {  
+    return (
+      await esbuild.transform(code, {
+        minify,
+        target: buildTarget as string | string[],
+        format: "esm"
+      })
+    ).code as string;
+  }
+
   return {
     name: "vite-plugin-top-level-await",
     enforce: "post",
@@ -75,7 +85,12 @@ export default function topLevelAwait(options?: Options): Plugin {
 
       await Promise.all(
         Object.keys(bundleChunks).map(async moduleName => {
-          if (!bundleInfo[moduleName].transformNeeded) return;
+          if (!bundleInfo[moduleName].transformNeeded) {
+            if (buildTarget !== "esnext") {
+              (bundle[moduleName] as OutputChunk).code = buildRawTarget(bundleChunks[moduleName]);
+            }
+            return
+          };
 
           const newAst = transformModule(
             bundleChunks[moduleName],
@@ -86,13 +101,7 @@ export default function topLevelAwait(options?: Options): Plugin {
           );
           let code = SWC.printSync(newAst, { minify }).code;
           if (buildTarget !== "esnext") {
-            code = (
-              await esbuild.transform(code, {
-                minify,
-                target: buildTarget as string | string[],
-                format: "esm"
-              })
-            ).code;
+            code = await buildRawTarget(code);
           }
           (bundle[moduleName] as OutputChunk).code = code;
         })
