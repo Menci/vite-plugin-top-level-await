@@ -87,7 +87,7 @@ export default function topLevelAwait(options?: Options): Plugin {
         Object.keys(bundleChunks).map(async moduleName => {
           if (!bundleInfo[moduleName].transformNeeded) {
             if (buildTarget !== "esnext") {
-              (bundle[moduleName] as OutputChunk).code = buildRawTarget(bundleChunks[moduleName]);
+              (bundle[moduleName] as OutputChunk).code = await buildRawTarget(bundleChunks[moduleName]);
             }
             return
           };
