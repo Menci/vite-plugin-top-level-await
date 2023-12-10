@@ -11,7 +11,12 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         node: ["14", "16", "18", "20"]
-        vite: ["2", "3", "4"]
+        vite: ["2", "3", "4", "5"]
+        exclude:
+          - node: "14"
+            vite: "5"
+          - node: "16"
+            vite: "5"
     name: Node.js ${{ matrix.node }} + Vite ${{ matrix.vite }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
@@ -19,6 +24,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+      - name: Set yarn to ignore engines version check
+        run: yarn config set ignore-engines true
       - name: Install dependencies
         run: yarn --frozen-lockfile
       - name: Install specified version of Vite
