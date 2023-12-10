@@ -130,15 +130,17 @@ export default function topLevelAwait(options?: Options): Plugin {
           entryFileNames: path.posix.join(assetsDir, "[name].js")
         });
 
-        // Minify with ESBuild
-        if (minify) {
-          newEntry.code = (
-            await esbuild.transform(newEntry.code, {
-              minify: true,
+        // Postprocess and minify (if requested) with ESBuild
+        newEntry.code = (
+          await esbuild.transform(
+            // Polyfill `document.currentScript.src` since it's used for `import.meta.url`.
+            `this.document = { currentScript: { src: this.location.href } };\n${newEntry.code}`,
+            {
+              minify,
               target: buildTarget as string | string[]
-            })
-          ).code;
-        }
+            }
+          )
+        ).code;
 
         // Remove extra chunks and replace ESM entry with IIFE entry
         for (const chunkName of chunkNames) {
