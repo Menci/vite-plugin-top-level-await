@@ -39,6 +39,15 @@ You can use this plugin for workers (by putting it in `config.worker.plugins`).
 
 * If the worker format is ES, the plugin works normally.
 * If the worker format is IIFE, the plugin first let Vite build your worker as an ES bundle since IIFE doesn't support top-level awaits, and then build the transformed ES bundle to IIFE. Please use IIFE when targeting Firefox.
+  ```js
+  const myWorker = import.meta.env.DEV
+      // In development mode, `import`s in workers are not transformed, so you
+      // must use `{ type: "module" }`.
+    ? new Worker(new URL("./my-worker.js", import.meta.url), { type: "module" })
+      // In build mode, let Vite and vite-plugin-top-level-await build a single-file
+      // bundle of your worker that works on both modern browsers and Firefox.
+    : new Worker(new URL("./my-worker.js", import.meta.url), { type: "classic" });
+  ```
 
 ## Note
 
