@@ -2,11 +2,17 @@
   "name": "vite-plugin-top-level-await",
   "version": "1.4.0",
   "description": "Transform code to support top-level await in normal browsers for Vite.",
-  "main": "dist/index.js",
+  "main": "./exports/require.cjs",
+  "module": "./exports/import.mjs",
   "exports": {
-    "types": "./dist/index.d.ts",
-    "import": "./exports/import.mjs",
-    "require": "./exports/require.cjs"
+    "import": {
+      "types": "./dist/index.d.ts",
+      "default": "./exports/import.mjs"
+    },
+    "require": {
+      "types": "./exports/require.d.cts",
+      "default": "./exports/require.cjs"
+    }
   },
   "repository": "https://github.com/Menci/vite-plugin-top-level-await",
   "author": "Menci <huanghaorui301@gmail.com>",
