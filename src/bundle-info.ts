@@ -58,7 +58,15 @@ export async function parseBundleInfo(bundleAsts: Record<string, SWC.Module>): P
 
     // Add reverse edges for dependency graph traversal
     moduleInfo.imported.forEach(importedModuleName => {
-      bundleInfo[importedModuleName].importedBy.push(moduleName);
+      if (bundleInfo[importedModuleName]) {
+        bundleInfo[importedModuleName].importedBy.push(moduleName);
+      } else {
+        console.warn(
+          `[vite-plugin-top-level-await] Non-existing module ${JSON.stringify(
+            importedModuleName
+          )} imported by ${JSON.stringify(moduleName)}, ignoring.`
+        );
+      }
     });
 
     const highestPattern = findHighestPattern(ast);
