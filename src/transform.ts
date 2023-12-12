@@ -285,7 +285,7 @@ export function transformModule(
   let importedPromiseCount = 0;
   for (const importDeclaration of imports) {
     const importedModuleName = resolveImport(moduleName, importDeclaration.source.value);
-    if (!importedModuleName) continue;
+    if (!importedModuleName || !bundleInfo[importedModuleName]) continue;
 
     if (bundleInfo[importedModuleName].transformNeeded) {
       importDeclaration.specifiers.push(
