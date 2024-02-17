@@ -17,7 +17,8 @@ import {
   makeVariableInitDeclaration,
   makeExportListDeclaration,
   makeStatement,
-  makeAwaitExpression
+  makeAwaitExpression,
+  transformExportNamedToImport
 } from "./utils/make-node";
 import { RandomIdentifierGenerator } from "./utils/random-identifier";
 import { resolveImport } from "./utils/resolve-import";
@@ -85,6 +86,11 @@ export function transformModule(
 
   // Extract import declarations
   const imports = ast.body.filter((item): item is SWC.ImportDeclaration => item.type === "ImportDeclaration");
+
+  const exportFromImport = ast.body.filter(
+    (item): item is SWC.ExportNamedDeclaration => item.type === "ExportNamedDeclaration" && !!item.source
+  );
+  const importFromExportList: SWC.ImportDeclaration[] = [];
 
   const exportMap: Record<string, string> = {};
 
@@ -181,7 +187,11 @@ export function transformModule(
   const importedNames = new Set(
     imports.flatMap(importStmt => importStmt.specifiers.map(specifier => specifier.local.value))
   );
-  const exportedNamesDeclaration = makeVariablesDeclaration(exportedNames.filter(name => !importedNames.has(name)));
+
+  const exportedNamesDeclaration = makeVariablesDeclaration(
+    exportFromImport.length ? [] : exportedNames.filter(name => !importedNames.has(name))
+  );
+
   const warppedStatements = topLevelStatements.flatMap<SWC.Statement>(stmt => {
     if (stmt.type === "VariableDeclaration") {
       const declaredNames = stmt.declarations.flatMap(decl => resolvePattern(decl.id));
@@ -295,6 +305,20 @@ export function transformModule(
     }
   }
 
+  for (const exportNamedDeclaration of exportFromImport) {
+    const importedModuleName = resolveImport(moduleName, exportNamedDeclaration.source.value);
+    if (!importedModuleName || !bundleInfo[importedModuleName]) continue;
+
+    if (bundleInfo[importedModuleName].transformNeeded) {
+      const newImportDeclaration = transformExportNamedToImport(exportNamedDeclaration);
+      newImportDeclaration.specifiers.push(
+        makeImportSpecifier(options.promiseExportName, options.promiseImportName(importedPromiseCount))
+      );
+      importFromExportList.push(newImportDeclaration);
+      importedPromiseCount++;
+    }
+  }
+
   const importedPromiseArray =
     importedPromiseCount === 0
       ? null
@@ -338,7 +362,7 @@ export function transformModule(
    * export { ..., __tla };
    */
 
-  const newTopLevel: SWC.ModuleItem[] = [...imports, exportedNamesDeclaration];
+  const newTopLevel: SWC.ModuleItem[] = [...imports, ...importFromExportList, exportedNamesDeclaration];
 
   if (exportedNames.length > 0 || bundleInfo[moduleName]?.importedBy?.length > 0) {
     // If the chunk is being imported, append export of the TLA promise to export list

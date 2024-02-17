@@ -1,4 +1,5 @@
 import * as SWC from "@swc/core";
+import { Span } from "@swc/core";
 
 function span(): SWC.Span {
   return { start: 0, end: 0, ctxt: 0 };
@@ -230,4 +231,25 @@ export function makeAwaitExpression(expression: SWC.Expression): SWC.AwaitExpres
     span: span(),
     argument: expression
   };
+}
+
+export function transformExportNamedToImport(exportNamedDeclNode: any): SWC.ImportDeclaration {
+  // Transform each ExportSpecifier into an ImportSpecifier
+  const importSpecifiers: SWC.ImportSpecifier[] = exportNamedDeclNode.specifiers.map(specifier => {
+    return {
+      type: "ImportSpecifier",
+      local: specifier.orig,
+      span: span()
+    };
+  });
+
+  const importDeclaration: SWC.ImportDeclaration = {
+    type: "ImportDeclaration",
+    specifiers: importSpecifiers,
+    source: exportNamedDeclNode.source,
+    span: span(),
+    typeOnly: false // Set based on your requirements
+  };
+
+  return importDeclaration;
 }
