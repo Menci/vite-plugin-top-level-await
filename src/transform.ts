@@ -187,9 +187,10 @@ export function transformModule(
   const importedNames = new Set(
     imports.flatMap(importStmt => importStmt.specifiers.map(specifier => specifier.local.value))
   );
+  exportFromImport.flatMap(importStmt => importStmt.specifiers.map((specifier:SWC.NamedExportSpecifier) => specifier.orig.value)).forEach(item=>importedNames.add(item))
 
   const exportedNamesDeclaration = makeVariablesDeclaration(
-    exportFromImport.length ? [] : exportedNames.filter(name => !importedNames.has(name))
+    exportedNames.filter(name => !importedNames.has(name))
   );
 
   const warppedStatements = topLevelStatements.flatMap<SWC.Statement>(stmt => {
