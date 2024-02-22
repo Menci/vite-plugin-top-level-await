@@ -50,7 +50,7 @@ export async function parseBundleInfo(bundleAsts: Record<string, SWC.Module>): P
     // Parse imports
     moduleInfo.imported = ast.body
       .map(item => {
-        if (item.type === "ImportDeclaration") {
+        if (item.type === "ImportDeclaration" || (item.type === "ExportNamedDeclaration" && item.source)) {
           return resolveImport(moduleName, item.source.value);
         }
       })
