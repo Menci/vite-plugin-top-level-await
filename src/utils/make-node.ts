@@ -8,6 +8,8 @@ export function makeIdentifier(name: string): SWC.Identifier {
   return {
     type: "Identifier",
     span: span(),
+    // @ts-ignore SWC is missing the "ctxt" property's
+    ctxt: 0,
     value: name,
     optional: false
   };
@@ -19,6 +21,8 @@ export function makeVariablesDeclaration(names: string[]): SWC.VariableDeclarati
   return {
     type: "VariableDeclaration",
     span: span(),
+    // @ts-ignore SWC is missing the "ctxt" property's
+    ctxt: 0,
     kind: "let",
     declare: false,
     declarations: names.map<SWC.VariableDeclarator>(name => ({
@@ -35,6 +39,8 @@ export function makeVariableInitDeclaration(name: string, value: SWC.Expression)
   return {
     type: "VariableDeclaration",
     span: span(),
+    // @ts-ignore SWC is missing the "ctxt" property's
+    ctxt: 0,
     kind: "let",
     declare: false,
     declarations: [
@@ -105,6 +111,8 @@ export function makeTryCatchStatement(
     block: {
       type: "BlockStatement",
       span: span(),
+      // @ts-ignore SWC is missing the "ctxt" property's
+      ctxt: 0,
       stmts: tryStatements
     },
     handler: {
@@ -114,6 +122,8 @@ export function makeTryCatchStatement(
       body: {
         type: "BlockStatement",
         span: span(),
+        // @ts-ignore SWC is missing the "ctxt" property's
+        ctxt: 0,
         stmts: catchStatements
       }
     },
@@ -129,15 +139,19 @@ export function makeArrowFunction(
   return {
     type: "ArrowFunctionExpression",
     span: span(),
+    ctxt: 0,
     params: args.map<SWC.Identifier>(arg => ({
       type: "Identifier",
       span: span(),
+      ctxt: 0,
       value: arg,
       optional: false
     })),
     body: {
       type: "BlockStatement",
       span: span(),
+      // @ts-ignore SWC is missing the "ctxt" property's
+      ctxt: 0,
       stmts: statements
     },
     async: !!async,
@@ -159,6 +173,8 @@ export function makeCallExpression(functionExpression: SWC.Expression, args?: SW
   return {
     type: "CallExpression",
     span: span(),
+    // @ts-ignore SWC is missing the "ctxt" property's
+    ctxt: 0,
     // Put IIFE's function expression in (parenthesis)
     callee:
       functionExpression.type === "FunctionExpression" || functionExpression.type === "ArrowFunctionExpression"
