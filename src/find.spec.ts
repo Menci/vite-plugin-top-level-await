@@ -116,4 +116,17 @@ describe("Find top-level await usage in module", () => {
     `
     );
   });
+
+  it("should work with await in object method property", () => {
+    test(
+      null,
+      `
+      const obj = {
+        async method() {
+          await x.func();
+        }
+      }
+    `
+    );
+  });
 });
