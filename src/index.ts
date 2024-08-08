@@ -134,7 +134,7 @@ export default function topLevelAwait(options?: Options): Plugin {
         newEntry.code = (
           await esbuild.transform(
             // Polyfill `document.currentScript.src` since it's used for `import.meta.url`.
-            `if (typeof document !== 'undefined') { this.document = { currentScript: { src: this.location.href } }; }\n${newEntry.code}`,
+            `if (typeof document !== 'undefined') { this.document = { currentScript: { src: self.location.href } }; }\n${newEntry.code}`,
             {
               minify,
               target: buildTarget as string | string[]
