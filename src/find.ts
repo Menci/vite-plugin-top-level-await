@@ -33,6 +33,7 @@ class FindPatternsVisitor extends Visitor {
     hook("visitClass");
     hook("visitArrowFunctionExpression");
     hook("visitFunction");
+    hook("visitMethodProperty");
   }
 
   visitAwaitExpression(expr: SWC.AwaitExpression): SWC.Expression {
