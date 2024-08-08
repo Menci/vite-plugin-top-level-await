@@ -392,6 +392,39 @@ describe("Transform top-level await", () => {
     );
   });
 
+  it("should work for a module with export-from statements", () => {
+    test(
+      "a",
+      {
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true, withTopLevelAwait: true },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true, withTopLevelAwait: true }
+      },
+      `
+      import { qwq } from "./b";
+      export { owo as uwu, default as ovo } from "./b";
+      export * as QwQ from "./b";
+      const qaq = await globalThis.someFunc(qwq);
+      export { qaq };
+    `,
+      `
+      import { qwq, __tla as __tla_0 } from "./b";
+      import { __tla as __tla_1 } from "./b";
+      import { __tla as __tla_2 } from "./b";
+      export { owo as uwu, default as ovo } from "./b";
+      export * as QwQ from "./b";
+      let qaq;
+      let __tla = Promise.all([
+        (() => { try { return __tla_0; } catch {} })(),
+        (() => { try { return __tla_1; } catch {} })(),
+        (() => { try { return __tla_2; } catch {} })(),
+      ]).then(async () => {
+        qaq = await globalThis.someFunc(qwq);
+      });
+      export { qaq, __tla };
+    `
+    );
+  });
+
   it("should skip processing imports of external modules", () => {
     test(
       "a",

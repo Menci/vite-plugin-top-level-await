@@ -231,3 +231,15 @@ export function makeAwaitExpression(expression: SWC.Expression): SWC.AwaitExpres
     argument: expression
   };
 }
+
+export function makeImportDeclaration(source: SWC.StringLiteral): SWC.ImportDeclaration {
+  const importDeclaration: SWC.ImportDeclaration = {
+    type: "ImportDeclaration",
+    specifiers: [],
+    source,
+    span: span(),
+    typeOnly: false
+  };
+
+  return importDeclaration;
+}

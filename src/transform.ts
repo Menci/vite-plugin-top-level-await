@@ -17,7 +17,8 @@ import {
   makeVariableInitDeclaration,
   makeExportListDeclaration,
   makeStatement,
-  makeAwaitExpression
+  makeAwaitExpression,
+  makeImportDeclaration
 } from "./utils/make-node";
 import { RandomIdentifierGenerator } from "./utils/random-identifier";
 import { resolveImport } from "./utils/resolve-import";
@@ -86,6 +87,12 @@ export function transformModule(
   // Extract import declarations
   const imports = ast.body.filter((item): item is SWC.ImportDeclaration => item.type === "ImportDeclaration");
 
+  // Handle `export { named as renamed } from "module";`
+  const exportFroms = ast.body.filter(
+    (item): item is SWC.ExportNamedDeclaration => item.type === "ExportNamedDeclaration" && !!item.source
+  );
+  const newImportsByExportFroms: SWC.ImportDeclaration[] = [];
+
   const exportMap: Record<string, string> = {};
 
   // Extract export declarations
@@ -130,15 +137,18 @@ export function transformModule(
         }
 
         return false;
+      // Handle `export { named as renamed };` without "from"
       case "ExportNamedDeclaration":
-        item.specifiers.forEach(specifier => {
-          /* istanbul ignore if */
-          if (specifier.type !== "ExportSpecifier") {
-            raiseUnexpectedNode("export specifier", specifier.type);
-          }
+        if (!item.source) {
+          item.specifiers.forEach(specifier => {
+            /* istanbul ignore if */
+            if (specifier.type !== "ExportSpecifier") {
+              raiseUnexpectedNode("export specifier", specifier.type);
+            }
 
-          exportMap[(specifier.exported || specifier.orig).value] = specifier.orig.value;
-        });
+            exportMap[(specifier.exported || specifier.orig).value] = specifier.orig.value;
+          });
+        }
 
         return true;
     }
@@ -181,7 +191,20 @@ export function transformModule(
   const importedNames = new Set(
     imports.flatMap(importStmt => importStmt.specifiers.map(specifier => specifier.local.value))
   );
-  const exportedNamesDeclaration = makeVariablesDeclaration(exportedNames.filter(name => !importedNames.has(name)));
+  const exportFromedNames = new Set(
+    exportFroms.flatMap(exportStmt => exportStmt.specifiers.map(specifier => {
+      if (specifier.type === "ExportNamespaceSpecifier") {
+        return specifier.name.value;
+      } else if (specifier.type === "ExportDefaultSpecifier") {
+        // When will this happen?
+        return specifier.exported.value;
+      } else {
+        return (specifier.exported || specifier.orig).value;
+      }
+    }))
+  );
+  const exportedNamesDeclaration = makeVariablesDeclaration(exportedNames.filter(name => !importedNames.has(name) && !exportFromedNames.has(name)));
+
   const warppedStatements = topLevelStatements.flatMap<SWC.Statement>(stmt => {
     if (stmt.type === "VariableDeclaration") {
       const declaredNames = stmt.declarations.flatMap(decl => resolvePattern(decl.id));
@@ -283,12 +306,19 @@ export function transformModule(
 
   // Add import of TLA promises from imported modules
   let importedPromiseCount = 0;
-  for (const importDeclaration of imports) {
-    const importedModuleName = resolveImport(moduleName, importDeclaration.source.value);
+  for (const declaration of [...imports, ...exportFroms]) {
+    const importedModuleName = resolveImport(moduleName, declaration.source.value);
     if (!importedModuleName || !bundleInfo[importedModuleName]) continue;
 
     if (bundleInfo[importedModuleName].transformNeeded) {
-      importDeclaration.specifiers.push(
+      let targetImportDeclaration: SWC.ImportDeclaration;
+      if (declaration.type === "ImportDeclaration") {
+        targetImportDeclaration = declaration;
+      } else {
+        targetImportDeclaration = makeImportDeclaration(declaration.source);
+        newImportsByExportFroms.push(targetImportDeclaration);
+      }
+      targetImportDeclaration.specifiers.push(
         makeImportSpecifier(options.promiseExportName, options.promiseImportName(importedPromiseCount))
       );
       importedPromiseCount++;
@@ -338,7 +368,7 @@ export function transformModule(
    * export { ..., __tla };
    */
 
-  const newTopLevel: SWC.ModuleItem[] = [...imports, exportedNamesDeclaration];
+  const newTopLevel: SWC.ModuleItem[] = [...imports, ...newImportsByExportFroms, ...exportFroms, exportedNamesDeclaration];
 
   if (exportedNames.length > 0 || bundleInfo[moduleName]?.importedBy?.length > 0) {
     // If the chunk is being imported, append export of the TLA promise to export list
