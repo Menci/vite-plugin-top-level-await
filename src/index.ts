@@ -47,9 +47,9 @@ export default function topLevelAwait(options?: Options): Plugin {
         isWorkerIifeRequested = true;
       }
     },
-    configResolved(config) {
-      if (config.command === "build") {
-        if (config.isWorker) {
+    config(config, env) {
+      if (env.command === "build") {
+        if (config.worker) {
           isWorker = true;
         }
 
@@ -64,7 +64,7 @@ export default function topLevelAwait(options?: Options): Plugin {
         assetsDir = config.build.assetsDir;
       }
 
-      if (config.command === "serve") {
+      if (env.command === "serve") {
         // Fix errors in NPM packages which are getting pre-processed in development build
         if (config.optimizeDeps?.esbuildOptions) {
           config.optimizeDeps.esbuildOptions.target = "esnext";
