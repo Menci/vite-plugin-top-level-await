@@ -13,6 +13,16 @@ export type { Options } from "./options";
 
 type ViteTarget = ResolvedConfig["build"]["target"];
 
+// Use the same default target as Vite.
+// https://github.com/vitejs/vite/blob/v6.0.7/packages/vite/src/node/constants.ts#L70-L76
+const DEFAULT_VITE_TARGET: ViteTarget = [
+  'es2020',
+  'edge88',
+  'firefox78',
+  'chrome87',
+  'safari14',
+]
+
 export default function topLevelAwait(options?: Options): Plugin {
   const resolvedOptions: Options = {
     ...DEFAULT_OPTIONS,
@@ -55,8 +65,10 @@ export default function topLevelAwait(options?: Options): Plugin {
 
         // By default Vite transforms code with esbuild with target for a browser list with ES modules support
         // This cause esbuild to throw an exception when there're top-level awaits in code
-        // Let's backup the original target and override the esbuild target with "esnext", which allows TLAs
-        buildTarget = config.build.target;
+        // Let's backup the original target and override the esbuild target with "esnext", which allows TLAs.
+        // If the user doesn't specify a target explicitly, `config.build.target` will be undefined and we'll 
+        // use the default Vite target.
+        buildTarget = config.build.target ?? DEFAULT_VITE_TARGET;
         config.build.target = "esnext";
 
         minify = !!config.build.minify;
