@@ -192,18 +192,22 @@ export function transformModule(
     imports.flatMap(importStmt => importStmt.specifiers.map(specifier => specifier.local.value))
   );
   const exportFromedNames = new Set(
-    exportFroms.flatMap(exportStmt => exportStmt.specifiers.map(specifier => {
-      if (specifier.type === "ExportNamespaceSpecifier") {
-        return specifier.name.value;
-      } else if (specifier.type === "ExportDefaultSpecifier") {
-        // When will this happen?
-        return specifier.exported.value;
-      } else {
-        return (specifier.exported || specifier.orig).value;
-      }
-    }))
+    exportFroms.flatMap(exportStmt =>
+      exportStmt.specifiers.map(specifier => {
+        if (specifier.type === "ExportNamespaceSpecifier") {
+          return specifier.name.value;
+        } else if (specifier.type === "ExportDefaultSpecifier") {
+          // When will this happen?
+          return specifier.exported.value;
+        } else {
+          return (specifier.exported || specifier.orig).value;
+        }
+      })
+    )
   );
-  const exportedNamesDeclaration = makeVariablesDeclaration(exportedNames.filter(name => !importedNames.has(name) && !exportFromedNames.has(name)));
+  const exportedNamesDeclaration = makeVariablesDeclaration(
+    exportedNames.filter(name => !importedNames.has(name) && !exportFromedNames.has(name))
+  );
 
   const warppedStatements = topLevelStatements.flatMap<SWC.Statement>(stmt => {
     if (stmt.type === "VariableDeclaration") {
@@ -368,7 +372,12 @@ export function transformModule(
    * export { ..., __tla };
    */
 
-  const newTopLevel: SWC.ModuleItem[] = [...imports, ...newImportsByExportFroms, ...exportFroms, exportedNamesDeclaration];
+  const newTopLevel: SWC.ModuleItem[] = [
+    ...imports,
+    ...newImportsByExportFroms,
+    ...exportFroms,
+    exportedNamesDeclaration
+  ];
 
   if (exportedNames.length > 0 || bundleInfo[moduleName]?.importedBy?.length > 0) {
     // If the chunk is being imported, append export of the TLA promise to export list
