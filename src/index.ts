@@ -2,7 +2,7 @@ import path from "path";
 import { Plugin, ResolvedConfig } from "vite";
 import { rollup, OutputChunk } from "rollup";
 import virtual from "@rollup/plugin-virtual";
-import * as SWC from "@swc/core";
+import * as SWC from "./swc";
 import esbuild from "./esbuild";
 
 import { DEFAULT_OPTIONS, Options } from "./options";

@@ -1,6 +1,6 @@
 /// <reference types="jest-extended" />
 
-import * as SWC from "@swc/core";
+import * as SWC from "./swc";
 
 import { CodePattern, findHighestPattern } from "./find";
 

@@ -1,4 +1,4 @@
-import * as SWC from "@swc/core";
+import * as SWC from "./swc";
 import { CodePattern, findHighestPattern } from "./find";
 
 import { resolveImport } from "./utils/resolve-import";

@@ -1,4 +1,4 @@
-import * as SWC from "@swc/core";
+import * as SWC from "../swc";
 
 function span(): SWC.Span {
   return { start: 0, end: 0, ctxt: 0 };

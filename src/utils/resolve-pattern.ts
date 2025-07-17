@@ -1,4 +1,4 @@
-import * as SWC from "@swc/core";
+import * as SWC from "../swc";
 import { raiseUnexpectedNode } from "./error";
 
 export function resolvePattern(pattern: SWC.Pattern): string | string[] {

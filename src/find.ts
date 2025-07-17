@@ -1,4 +1,4 @@
-import * as SWC from "@swc/core";
+import * as SWC from "./swc";
 import { Visitor } from "@swc/core/Visitor";
 
 // Throw an exception when found top-level await to exit earlier from AST traversal
