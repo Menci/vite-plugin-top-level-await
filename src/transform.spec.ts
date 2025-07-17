@@ -451,6 +451,31 @@ describe("Transform top-level await", () => {
     );
   });
 
+  it("should handle side-effect-only imports correctly", () => {
+    test(
+      "a",
+      {
+        a: { imported: ["./b"], importedBy: [], transformNeeded: true, withTopLevelAwait: false },
+        b: { imported: [], importedBy: ["./a"], transformNeeded: true, withTopLevelAwait: true }
+      },
+      `
+      import "./b";
+      const x = 1;
+      export { x };
+      `,
+      `
+      import { __tla as __tla_0 } from "./b";
+      let x;
+      let __tla = Promise.all([
+        (() => { try { return __tla_0; } catch {} })(),
+      ]).then(async () => {
+        x = 1;
+      });
+      export { x, __tla };
+      `
+    );
+  });
+
   it("should transform dynamic imports correctly", () => {
     test(
       "a",

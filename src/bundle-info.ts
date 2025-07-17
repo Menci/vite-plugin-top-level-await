@@ -61,6 +61,7 @@ export async function parseBundleInfo(bundleAsts: Record<string, SWC.Module>): P
       if (bundleInfo[importedModuleName]) {
         bundleInfo[importedModuleName].importedBy.push(moduleName);
       } else {
+        /* istanbul ignore next */
         console.warn(
           `[vite-plugin-top-level-await] Non-existing module ${JSON.stringify(
             importedModuleName

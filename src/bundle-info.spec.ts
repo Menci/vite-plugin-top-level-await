@@ -72,6 +72,33 @@ describe("Bundle info parser", () => {
     expect(bundleInfo["c"].importedBy).toIncludeSameMembers(["a"]);
   });
 
+  it("should parse side-effect-only imports correctly", async () => {
+    const chunks = {
+      a: `
+        import "./b";
+        const x = 1;
+        export { x };
+      `,
+      b: `
+        const y = await globalThis.x?.y;
+        export { y };
+      `
+    };
+
+    const bundleInfo = await parseBundleInfo(await parseBundleAsts(chunks));
+
+    expect(bundleInfo["a"]).toBeTruthy();
+    expect(bundleInfo["a"].imported).toIncludeSameMembers(["b"]);
+    expect(bundleInfo["a"].importedBy).toIncludeSameMembers([]);
+    expect(bundleInfo["a"].withTopLevelAwait).toBeTrue();
+    expect(bundleInfo["a"].transformNeeded).toBeTrue();
+    expect(bundleInfo["b"]).toBeTruthy();
+    expect(bundleInfo["b"].imported).toIncludeSameMembers([]);
+    expect(bundleInfo["b"].importedBy).toIncludeSameMembers(["a"]);
+    expect(bundleInfo["b"].withTopLevelAwait).toBeTrue();
+    expect(bundleInfo["b"].transformNeeded).toBeTrue();
+  });
+
   it("should parse dependency graph correctly", async () => {
     const dependencyGraph = {
       a: ["b", "c", "d"],
