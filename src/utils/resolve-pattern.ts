@@ -17,13 +17,15 @@ export function resolvePattern(pattern: SWC.Pattern): string | string[] {
         }
       });
     case "ArrayPattern":
-      return pattern.elements.flatMap(elem => {
-        if (elem.type === "RestElement") {
-          return resolvePattern(elem.argument);
-        }
+      return pattern.elements
+        .filter(elem => elem)
+        .flatMap(elem => {
+          if (elem.type === "RestElement") {
+            return resolvePattern(elem.argument);
+          }
 
-        return resolvePattern(elem);
-      });
+          return resolvePattern(elem);
+        });
     case "AssignmentPattern":
       return resolvePattern(pattern.left);
     /* istanbul ignore next */

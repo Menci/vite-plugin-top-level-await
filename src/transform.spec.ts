@@ -223,14 +223,14 @@ describe("Transform top-level await", () => {
         a: { imported: [], importedBy: [], transformNeeded: true, withTopLevelAwait: true }
       },
       `
-      const [x, [[[y, z] = [0, 1], w], ...u] = globalThis.someArray, ...v] = await globalThis.somePromise;
+      const [x, [[[, y, , z] = [0, 1, 2, 3], w], ...u] = globalThis.someArray, ...v] = await globalThis.somePromise;
       export { x, y as yyy, w as www, u as uuu };
     `,
       `
       let x, y, w, u
       let __tla = (async () => {
         let z, v;
-        [x, [[[y, z] = [0, 1], w], ...u] = globalThis.someArray, ...v] = await globalThis.somePromise;
+        [x, [[[, y, , z] = [0, 1, 2, 3], w], ...u] = globalThis.someArray, ...v] = await globalThis.somePromise;
       })();
       export { x, y as yyy, w as www, u as uuu, __tla };
     `
