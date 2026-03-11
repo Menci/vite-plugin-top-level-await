@@ -188,6 +188,36 @@ export function transformModule(
     (item): item is SWC.Statement =>
       !(imports as SWC.ModuleItem[]).includes(item) && !(namedExports as SWC.ModuleItem[]).includes(item)
   );
+
+  // Preserve function/class hoisting for exported declarations.
+  // When these declarations are rewritten to assignments, code that relies on hoisting breaks.
+  // Use dedicated export binding names and keep declaration statements untouched.
+  const hoistedExportNames = new Set(
+    topLevelStatements.flatMap(statement => {
+      if (
+        (statement.type === "FunctionDeclaration" || statement.type === "ClassDeclaration") &&
+        exportedNameSet.has(statement.identifier.value)
+      ) {
+        return [statement.identifier.value];
+      }
+      return [];
+    })
+  );
+
+  const exportBindingsByLocalName = Object.fromEntries(
+    Array.from(hoistedExportNames).map(localName => [localName, `__tla_export_${localName}`])
+  );
+
+  const exportBindings = Object.fromEntries(
+    Object.entries(exportMap).map(([exportName, localName]) => [
+      exportName,
+      exportBindingsByLocalName[localName] ?? localName
+    ])
+  );
+
+  const exportedBindingNameSet = new Set(Object.values(exportBindings));
+  const exportedBindingNames = Array.from(exportedBindingNameSet);
+
   const importedNames = new Set(
     imports.flatMap(importStmt => importStmt.specifiers.map(specifier => specifier.local.value))
   );
@@ -206,7 +236,7 @@ export function transformModule(
     )
   );
   const exportedNamesDeclaration = makeVariablesDeclaration(
-    exportedNames.filter(name => !importedNames.has(name) && !exportFromedNames.has(name))
+    exportedBindingNames.filter(name => !importedNames.has(name) && !exportFromedNames.has(name))
   );
 
   const warppedStatements = topLevelStatements.flatMap<SWC.Statement>(stmt => {
@@ -230,7 +260,13 @@ export function transformModule(
     } else if (stmt.type === "FunctionDeclaration" || stmt.type === "ClassDeclaration") {
       const name = stmt.identifier.value;
       if (!exportedNameSet.has(name)) return stmt;
-      return makeAssignmentStatement(makeIdentifier(name), declarationToExpression(stmt));
+
+      const exportBindingName = exportBindingsByLocalName[name];
+      if (!exportBindingName) {
+        return makeAssignmentStatement(makeIdentifier(name), declarationToExpression(stmt));
+      }
+
+      return [stmt, makeAssignmentStatement(makeIdentifier(exportBindingName), makeIdentifier(name))];
     } else {
       return stmt;
     }
@@ -382,9 +418,9 @@ export function transformModule(
   if (exportedNames.length > 0 || bundleInfo[moduleName]?.importedBy?.length > 0) {
     // If the chunk is being imported, append export of the TLA promise to export list
     const promiseDeclaration = makeVariableInitDeclaration(options.promiseExportName, promiseExpression);
-    exportMap[options.promiseExportName] = options.promiseExportName;
+    exportBindings[options.promiseExportName] = options.promiseExportName;
 
-    newTopLevel.push(promiseDeclaration, makeExportListDeclaration(Object.entries(exportMap)));
+    newTopLevel.push(promiseDeclaration, makeExportListDeclaration(Object.entries(exportBindings)));
   } else {
     // If the chunk is an entry, just execute the promise expression
     newTopLevel.push(makeStatement(promiseExpression));

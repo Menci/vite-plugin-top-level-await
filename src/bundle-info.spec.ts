@@ -141,7 +141,7 @@ describe("Bundle info parser", () => {
       await parseBundleAsts(makeTestcase(dependencyGraph, moduleWithTopLevelAwait, moduleWithDynamicImport))
     );
 
-    const expectedModulesNeedTransform = ["a", "b", "d", "e", "f", "g", "h", "i"];
+    const expectedModulesNeedTransform = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
     expect(
       Object.entries(bundleInfo)
         .filter(([, info]) => info.transformNeeded)

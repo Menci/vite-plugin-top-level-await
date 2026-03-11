@@ -76,16 +76,17 @@ export async function parseBundleInfo(bundleAsts: Record<string, SWC.Module>): P
     moduleInfo.withTopLevelAwait = highestPattern === CodePattern.TopLevelAwait;
   }
 
-  // Pass 2: transfer each modules's "top-level await usage" property to all successors in reverse graph
+  // Pass 2: transfer each module's async-initialization requirement to all successors in reverse graph
+  // Any transformed module exports values initialized in an async wrapper, so its importers must also transform.
   const q: string[] = Object.entries(bundleInfo)
-    .filter(([, module]) => module.withTopLevelAwait)
+    .filter(([, module]) => module.transformNeeded)
     .map(([moduleName]) => moduleName);
   while (q.length > 0) {
     const moduleName = q.shift();
 
     for (const nextModuleName of bundleInfo[moduleName].importedBy) {
       // Skip modules which are already enqueued once
-      if (bundleInfo[nextModuleName].withTopLevelAwait) continue;
+      if (bundleInfo[nextModuleName].transformNeeded) continue;
 
       // Enqueue next module
       bundleInfo[nextModuleName].withTopLevelAwait = true;

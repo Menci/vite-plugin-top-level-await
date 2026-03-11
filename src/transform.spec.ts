@@ -156,15 +156,18 @@ describe("Transform top-level await", () => {
       export { x, f1 as func1, f2 as func2, f3 as func3 };
     `,
       `
-      let x, f1, f2, f3;
+      let x, __tla_export_f1, __tla_export_f2, __tla_export_f3;
       let __tla = (async () => {
         x = await globalThis.somePromise;
         function f0(args) { return Math.max(...args); }
-        f1 = function (args) { return f1(...args, 0); };
-        f2 = function* (args) { yield globalThis.qwq; };
-        f3 = async function (args) { await Promise.all(globalThis.promises); };
+        function f1(args) { return f1(...args, 0); }
+        __tla_export_f1 = f1;
+        function* f2(args) { yield globalThis.qwq; }
+        __tla_export_f2 = f2;
+        async function f3(args) { await Promise.all(globalThis.promises); }
+        __tla_export_f3 = f3;
       })();
-      export { x, f1 as func1, f2 as func2, f3 as func3, __tla };
+      export { x, __tla_export_f1 as func1, __tla_export_f2 as func2, __tla_export_f3 as func3, __tla };
     `
     );
   });
@@ -183,14 +186,16 @@ describe("Transform top-level await", () => {
       export { x, C0 as Class0, C2 as Class2 };
     `,
       `
-      let x, C0, C2;
+      let x, __tla_export_C0, __tla_export_C2;
       let __tla = (async () => {
         x = await globalThis.somePromise;
-        C0 = class { method0() { return 0; } };
+        class C0 { method0() { return 0; } }
+        __tla_export_C0 = C0;
         class C1 extends C0 { method1() { return 1; } }
-        C2 = class extends C1 { method2() { return 2; } };
+        class C2 extends C1 { method2() { return 2; } }
+        __tla_export_C2 = C2;
       })();
-      export { x, C0 as Class0, C2 as Class2, __tla };
+      export { x, __tla_export_C0 as Class0, __tla_export_C2 as Class2, __tla };
     `
     );
   });
@@ -253,16 +258,20 @@ describe("Transform top-level await", () => {
       export { x };
     `,
       `
-      let f1, f2, f3, c1, x;
+      let __tla_export_f1, __tla_export_f2, __tla_export_f3, __tla_export_c1, x;
       let __tla = (async () => {
         x = await globalThis.somePromise;
         function f0(args) { return Math.max(...args); }
-        f1 = function (args) { return f1(...args, 0); };
-        f2 = function* (args) { yield globalThis.qwq; };
-        f3 = async function (args) { await Promise.all(globalThis.promises); };
-        c1 = class { qwq = 1 };
+        function f1(args) { return f1(...args, 0); }
+        __tla_export_f1 = f1;
+        function* f2(args) { yield globalThis.qwq; }
+        __tla_export_f2 = f2;
+        async function f3(args) { await Promise.all(globalThis.promises); }
+        __tla_export_f3 = f3;
+        class c1 { qwq = 1 }
+        __tla_export_c1 = c1;
       })();
-      export { f1, f2, f3, c1, x, __tla };
+      export { __tla_export_f1 as f1, __tla_export_f2 as f2, __tla_export_f3 as f3, __tla_export_c1 as c1, x, __tla };
     `
     );
   });
@@ -278,12 +287,13 @@ describe("Transform top-level await", () => {
       export default function A(b, c, d) { return a; }
     `,
       `
-      let A;
+      let __tla_export_A;
       let __tla = (async () => {
         const a = await globalThis.somePromise;
-        A = function (b, c, d) { return a; };
+        function A(b, c, d) { return a; }
+        __tla_export_A = A;
       })();
-      export { A as default, __tla };
+      export { __tla_export_A as default, __tla };
     `
     );
   });
@@ -299,12 +309,13 @@ describe("Transform top-level await", () => {
       export default class A { prop = "qwq"; }
     `,
       `
-      let A;
+      let __tla_export_A;
       let __tla = (async () => {
         const a = await globalThis.somePromise;
-        A = class { prop = "qwq"; };
+        class A { prop = "qwq"; }
+        __tla_export_A = A;
       })();
-      export { A as default, __tla };
+      export { __tla_export_A as default, __tla };
     `
     );
   });
