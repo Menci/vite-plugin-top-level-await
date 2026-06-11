@@ -45,7 +45,6 @@
     "@rollup/plugin-virtual": "^3.0.2",
     "@swc/core": "^1.12.14",
     "@swc/wasm": "^1.12.14",
-    "rollup": "^4.61.1",
     "uuid": "10.0.0"
   },
   "peerDependencies": {
