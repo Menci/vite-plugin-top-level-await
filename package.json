@@ -41,6 +41,7 @@
     "vite": "^7.0.5"
   },
   "dependencies": {
+    "@ampproject/remapping": "^2.3.0",
     "@rollup/plugin-virtual": "^3.0.2",
     "@swc/core": "^1.12.14",
     "@swc/wasm": "^1.12.14",
