@@ -2,6 +2,7 @@ import path from "path";
 import { Plugin, ResolvedConfig } from "vite";
 import { rollup, OutputChunk } from "rollup";
 import virtual from "@rollup/plugin-virtual";
+import remapping from "@ampproject/remapping";
 import * as SWC from "./swc";
 import esbuild from "./esbuild";
 
@@ -30,14 +31,22 @@ export default function topLevelAwait(options?: Options): Plugin {
   let buildTarget: ViteTarget;
   let minify: boolean;
 
-  const buildRawTarget = async (code: string) => {
-    return (
-      await esbuild.transform(code, {
-        minify,
-        target: buildTarget as string | string[],
-        format: "esm"
-      })
-    ).code as string;
+  const buildRawTarget = async (code: string, existingMap?: OutputChunk["map"]) => {
+    const result = await esbuild.transform(code, {
+      minify,
+      target: buildTarget as string | string[],
+      format: "esm",
+      sourcemap: true,
+      sourcesContent: false
+    });
+    return {
+      code: result.code as string,
+      map: result.map
+        ? existingMap
+          ? (remapping([result.map as any, existingMap as any], () => null) as any)
+          : (JSON.parse(result.map) as any)
+        : existingMap
+    };
   };
 
   return {
@@ -91,9 +100,15 @@ export default function topLevelAwait(options?: Options): Plugin {
 
       await Promise.all(
         Object.keys(bundleChunks).map(async moduleName => {
+          const chunk = bundle[moduleName] as OutputChunk;
+          // Capture the existing rollup-generated sourcemap before we touch it
+          const existingMap = chunk.map;
+
           if (!bundleInfo[moduleName].transformNeeded) {
             if (buildTarget !== "esnext") {
-              (bundle[moduleName] as OutputChunk).code = await buildRawTarget(bundleChunks[moduleName]);
+              const result = await buildRawTarget(bundleChunks[moduleName], existingMap);
+              chunk.code = result.code;
+              if (result.map) chunk.map = result.map;
             }
             return;
           }
@@ -105,11 +120,32 @@ export default function topLevelAwait(options?: Options): Plugin {
             bundleInfo,
             resolvedOptions
           );
-          let code = SWC.printSync(newAst, { minify }).code;
+
+          // Get code AND sourcemap from SWC (maps transformed code → original bundle positions)
+          const swcResult = SWC.printSync(newAst, { minify, sourceMaps: true });
+          const swcMap = swcResult.map ? JSON.parse(swcResult.map) : null;
+
           if (buildTarget !== "esnext") {
-            code = await buildRawTarget(code);
+            // Chain: esbuild map → SWC map → existing rollup map
+            const mapsToChain = [
+              ...(swcMap ? [swcMap] : []),
+              ...(existingMap ? [existingMap as any] : [])
+            ];
+            const result = await buildRawTarget(
+              swcResult.code,
+              mapsToChain.length > 0 ? (remapping(mapsToChain, () => null) as any) : undefined
+            );
+            chunk.code = result.code;
+            if (result.map) chunk.map = result.map;
+          } else {
+            // Chain: SWC map → existing rollup map
+            chunk.code = swcResult.code;
+            if (swcMap && existingMap) {
+              chunk.map = remapping([swcMap, existingMap as any], () => null) as any;
+            } else if (swcMap) {
+              chunk.map = swcMap;
+            }
           }
-          (bundle[moduleName] as OutputChunk).code = code;
         })
       );
 
