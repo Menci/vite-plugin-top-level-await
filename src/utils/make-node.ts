@@ -4,6 +4,35 @@ function span(): SWC.Span {
   return { start: 0, end: 0, ctxt: 0 };
 }
 
+/**
+ * The node type SWC uses for a function/arrow body.
+ *
+ * SWC 1.16 renamed it from `BlockStatement` to `FunctionBody`; a standalone block
+ * statement (a bare block, a `try` block, a `catch` body) is still `BlockStatement`.
+ * Emitting the wrong one makes `printSync` reject the whole module with
+ * "unknown variant `BlockStatement`", since it is deserialising the body as an expression.
+ *
+ * Asked of SWC rather than derived from its version, so this holds across the supported
+ * range in either direction — and through the next rename.
+ */
+let functionBodyType: "BlockStatement" | "FunctionBody" | undefined;
+
+function getFunctionBodyType(): "BlockStatement" | "FunctionBody" {
+  if (functionBodyType === undefined) {
+    functionBodyType = "BlockStatement";
+    try {
+      const probe = SWC.parseSync("const f = () => {};", { target: "es2022", syntax: "ecmascript" });
+      const declaration = probe.body[0] as any;
+      const bodyType = declaration?.declarations?.[0]?.init?.body?.type;
+      if (bodyType === "FunctionBody") functionBodyType = "FunctionBody";
+    } catch {
+      // Keep the pre-1.16 name: a probe that cannot run tells us nothing, and this is
+      // the shape every version before the rename expects.
+    }
+  }
+  return functionBodyType;
+}
+
 export function makeIdentifier(name: string): SWC.Identifier {
   return {
     type: "Identifier",
@@ -148,7 +177,9 @@ export function makeArrowFunction(
       optional: false
     })),
     body: {
-      type: "BlockStatement",
+      // Not a literal: see `getFunctionBodyType`. The cast keeps the union narrow enough
+      // for the declared return type — the value is whichever name this SWC expects.
+      type: getFunctionBodyType() as "BlockStatement",
       span: span(),
       // @ts-ignore SWC is missing the "ctxt" property's
       ctxt: 0,
